@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/07 17:46:05 by nismayil          #+#    #+#             */
-/*   Updated: 2025/01/22 22:57:54 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/07/29 00:58:46 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,27 +67,6 @@ char *make_line(char *str, int *index)
 	}
 	new_line[i] = '\0';
 	return (new_line);
-}
-
-char *gnl_strjoin(char *prev_line, char *curr_line)
-{
-	char *final_line;
-	char *start;
-
-	if (!curr_line)
-		return (NULL);
-	final_line = malloc(ft_strlen(prev_line) + ft_strlen(curr_line) + 1);
-	if (!final_line)
-		return (NULL);
-	start = final_line;
-	if (prev_line)
-		while (*prev_line)
-			*final_line++ = *prev_line++;
-	if (curr_line)
-		while (*curr_line)
-			*final_line++ = *curr_line++;
-	*final_line = '\0';
-	return (start);
 }
 
 void create_merge(char **final_line, char *buf)

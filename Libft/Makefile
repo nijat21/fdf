@@ -7,7 +7,7 @@ CC = cc
 CFLAGS = -g -Wall -Wextra -Werror
 
 CFLAGS += -D BUFFER_SIZE=$(BUFFER_SIZE)
-BUFFER_SIZE ?= 42
+BUFFER_SIZE ?= 128
 $(info Compiling buffer with BUFFER_SIZE: $(BUFFER_SIZE))
 
 SRCS := ft_isalnum.c ft_itoa.c ft_memchr.c ft_putchar_fd.c \
