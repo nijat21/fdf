@@ -5,7 +5,7 @@
 In Linux, it should be handled manually */
 int key_hook(int keycode, t_vars *vars)
 {
-    ft_printf("keycode: %d\n", keycode);
+    // ft_printf("keycode: %d\n", keycode);
     switch (keycode)
     {
     case 53:
