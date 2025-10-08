@@ -18,6 +18,12 @@ typedef struct s_vars
     void *win;
 } t_vars;
 
+typedef struct s_image
+{
+    int height;
+    int width;
+} t_image;
+
 // utils
 int rgb_to_int(double r, double g, double b);
 int normalize_y(int curr, int total);

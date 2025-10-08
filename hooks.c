@@ -27,3 +27,5 @@ int close_win(int keycode, t_vars *vars)
     exit(0);
     return 0;
 }
+
+// A function that should calculate x and y for which the image will be in the center of the window
