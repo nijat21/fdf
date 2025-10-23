@@ -41,7 +41,7 @@ void draw_put_image(t_win *window, t_image *img)
     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
 }
 
-int parse_store_map(int fd)
+t_point **parse_store_map(int fd)
 {
     char *temp_map;
     char **map;
@@ -56,13 +56,13 @@ int parse_store_map(int fd)
     {
         ft_putstr_fd("Couldn't read the map\n", 2);
         close(fd);
-        return 0;
+        return NULL;
     }
     map = ft_split(temp_map, '\n');
     if (!map)
     {
         ft_putstr_fd("Couldn't split the map\n", 2);
-        return 0;
+        return NULL;
     }
     ft_printf("ft_split map:\n");
     rows = ft_str_strlen(map);
@@ -75,10 +75,16 @@ int parse_store_map(int fd)
         if (!map_row)
         {
             ft_putstr_fd("Couldn't split the map row\n", 2);
-            return 0;
+            free_arr(map);
+            free(points);
+            return NULL;
         }
         cols = ft_str_strlen(map_row);
         points[row] = malloc(sizeof(t_point) * cols);
+        if (!points[row])
+        {
+            ft_putstr_fd("")
+        }
         // ft_printf("Map_row length: %d\n", cols);
         col = 0;
         while (col < cols)
@@ -112,7 +118,7 @@ int parse_store_map(int fd)
         i++;
     }
 
-    return 0;
+    return points;
 }
 
 int main(int ac, char *av[])

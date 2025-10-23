@@ -14,7 +14,7 @@ int normalize_y(int curr, int total)
     return total - curr;
 }
 
-void free_arr(char **arr)
+void free_arr(void **arr)
 {
     int i;
 
