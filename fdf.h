@@ -35,10 +35,31 @@ typedef struct s_point
     int color;
 } t_point;
 
+typedef struct s_row
+{
+    t_point *row;
+    int ncols;
+} t_row;
+
+typedef struct s_map
+{
+    int nrows;
+    t_row *rows;
+} t_map;
+
+/*
+[
+    nrows
+    [(point1, ncols1), (point2, ncols2)]
+]
+ */
+
 // utils
 int rgb_to_int(double r, double g, double b);
 int normalize_y(int curr, int total);
-void free_arr(char **arr);
+void free_char_arr(char **arr);
+void free_t_point_arr(t_point **arr);
+size_t ft_str_strlen(char **str);
 
 // hooks
 int key_hook(int keycode, t_win *vars);

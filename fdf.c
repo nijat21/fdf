@@ -13,43 +13,37 @@ char *read_file(int fd)
     return map;
 }
 
-size_t ft_str_strlen(char **str)
-{
-    size_t count;
+// void draw_put_image(t_win *window, t_image *img, t_point **points)
+// {
+//     char *data;
+//     int bpp;
+//     int size_line;
+//     int endian;
 
-    count = 0;
-    while (str[count])
-        count++;
-    return count;
-}
+//     int spacing = 50;
+//     size_t rows;
+//     size_t cols;
 
-void draw_put_image(t_win *window, t_image *img)
-{
-    char *data;
-    int bpp;
-    int size_line;
-    int endian;
+//     data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
 
-    int spacing = 50;     // pixels between lines
-    int color = 0xFFFFFF; // white
+//     while ()
+//         for (int y = 0; y < img->height; y += spacing)
+//             for (int x = 0; x < img->width; x += spacing)
+//                 if (x - spacing >= 0 && y - spacing >= 0 &&)
+//                     *(int *)(data + (y * size_line + x * (bpp / 8))) = color;
+//     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
+// }
 
-    data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
-    for (int y = 0; y < img->height; y++)
-        for (int x = 0; x < img->width; x++)
-            if (x % spacing == 0 || y % spacing == 0)
-                *(int *)(data + (y * size_line + x * (bpp / 8))) = color;
-    mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
-}
-
-t_point **parse_store_map(int fd)
+t_map *parse_store_map(int fd)
 {
     char *temp_map;
-    char **map;
+    char **str_map;
     size_t row;
     size_t rows;
     size_t col;
     size_t cols;
     t_point **points;
+    t_map *map;
 
     temp_map = read_file(fd);
     if (!temp_map)
@@ -58,32 +52,38 @@ t_point **parse_store_map(int fd)
         close(fd);
         return NULL;
     }
-    map = ft_split(temp_map, '\n');
-    if (!map)
+    str_map = ft_split(temp_map, '\n');
+    if (!str_map)
     {
         ft_putstr_fd("Couldn't split the map\n", 2);
         return NULL;
     }
     ft_printf("ft_split map:\n");
-    rows = ft_str_strlen(map);
+    rows = ft_str_strlen(str_map);
     points = malloc(sizeof(t_point *) * rows);
+    map = malloc(sizeof(t_map));
+    map->nrows = rows;
+    map->rows = malloc(sizeof(t_row) * rows);
     row = 0;
     while (row < rows)
     {
         // ft_printf("row %d\n", row);
-        char **map_row = ft_split(map[row], ' ');
+        char **map_row = ft_split(str_map[row], ' ');
         if (!map_row)
         {
             ft_putstr_fd("Couldn't split the map row\n", 2);
-            free_arr(map);
+            free_char_arr(str_map);
             free(points);
             return NULL;
         }
         cols = ft_str_strlen(map_row);
+        map->ncols = cols;
         points[row] = malloc(sizeof(t_point) * cols);
         if (!points[row])
         {
-            ft_putstr_fd("")
+            ft_putstr_fd("Couldn't allocate memory for the row\n", 2);
+            free_char_arr(str_map);
+            free_t_point_arr(points);
         }
         // ft_printf("Map_row length: %d\n", cols);
         col = 0;
@@ -99,26 +99,30 @@ t_point **parse_store_map(int fd)
             else
                 points[row][col].color = 0xFFFFFF;
             // ft_printf("color %s\n", parts[1]);
-            free_arr(parts);
+            free_char_arr(parts);
             col++;
         }
-        free_arr(map_row);
+        free_char_arr(map_row);
         row++;
     }
+
+    map->map = points;
 
     size_t i = 0;
     while (i < rows)
     {
+        t_point **temp = map->map;
         size_t j = 0;
         while (j < cols)
         {
-            ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", points[i][j].x, points[i][j].y, points[i][j].z, points[i][j].color);
+            ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", temp[i][j].x, temp[i][j].y, temp[i][j].z, temp[i][j].color);
             j++;
         }
         i++;
     }
+    ft_printf("This map has %d rows and %d columns\n", map->nrows, map->ncols);
 
-    return points;
+    return map;
 }
 
 int main(int ac, char *av[])
