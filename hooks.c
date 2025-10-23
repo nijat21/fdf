@@ -3,7 +3,7 @@
 /* If ESC cliced, close the window in a clean way */
 /* In MacOS, window is automatically closed when X button is clicked.
 In Linux, it should be handled manually */
-int key_hook(int keycode, t_vars *vars)
+int key_hook(int keycode, t_win *vars)
 {
     // ft_printf("keycode: %d\n", keycode);
     switch (keycode)
@@ -17,7 +17,7 @@ int key_hook(int keycode, t_vars *vars)
     return (0);
 }
 
-int close_win(int keycode, t_vars *vars)
+int close_win(int keycode, t_win *vars)
 {
     (void)keycode;
 #if defined(__linux__)

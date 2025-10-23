@@ -12,25 +12,37 @@
 #include "Libft/libft.h"
 #include <math.h>
 
-typedef struct s_vars
+typedef struct s_win
 {
     void *mlx;
     void *win;
-} t_vars;
+    int height;
+    int width;
+} t_win;
 
 typedef struct s_image
 {
     int height;
     int width;
+    void *img_ptr;
 } t_image;
+
+typedef struct s_point
+{
+    int x;
+    int y;
+    int z;
+    int color;
+} t_point;
 
 // utils
 int rgb_to_int(double r, double g, double b);
 int normalize_y(int curr, int total);
+void free_arr(char **arr);
 
 // hooks
-int key_hook(int keycode, t_vars *vars);
-int close_win(int keycode, t_vars *vars);
+int key_hook(int keycode, t_win *vars);
+int close_win(int keycode, t_win *vars);
 
 // events
 
