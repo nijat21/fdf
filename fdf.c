@@ -60,7 +60,7 @@ t_map *parse_store_map(int fd)
     }
     ft_printf("ft_split map:\n");
     rows = ft_str_strlen(str_map);
-    points = malloc(sizeof(t_point *) * rows);
+    points = malloc(sizeof(t_point) * rows);
     map = malloc(sizeof(t_map));
     map->nrows = rows;
     map->rows = malloc(sizeof(t_row) * rows);
@@ -77,7 +77,6 @@ t_map *parse_store_map(int fd)
             return NULL;
         }
         cols = ft_str_strlen(map_row);
-        map->ncols = cols;
         points[row] = malloc(sizeof(t_point) * cols);
         if (!points[row])
         {
@@ -103,24 +102,22 @@ t_map *parse_store_map(int fd)
             col++;
         }
         free_char_arr(map_row);
+        map->rows[row].row = points[row];
+        map->rows[row].ncols = cols;
         row++;
     }
 
-    map->map = points;
-
-    size_t i = 0;
-    while (i < rows)
+    ft_printf("Map has %d rows\n", map->nrows);
+    for (int i = 0; i < map->nrows; i++)
     {
-        t_point **temp = map->map;
-        size_t j = 0;
-        while (j < cols)
+        t_row temp_row = map->rows[i];
+        for (int j = 0; j < temp_row.ncols; j++)
         {
-            ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", temp[i][j].x, temp[i][j].y, temp[i][j].z, temp[i][j].color);
+            ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", temp_row.row[j].x, temp_row.row[j].y, temp_row.row[j].z, temp_row.row[j].color);
             j++;
         }
-        i++;
+        ft_printf("This row has %d columns\n", temp_row.ncols);
     }
-    ft_printf("This map has %d rows and %d columns\n", map->nrows, map->ncols);
 
     return map;
 }
