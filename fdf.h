@@ -37,7 +37,7 @@ typedef struct s_point
 
 typedef struct s_row
 {
-    t_point *row;
+    t_point *cols;
     int ncols;
 } t_row;
 

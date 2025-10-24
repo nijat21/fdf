@@ -13,26 +13,42 @@ char *read_file(int fd)
     return map;
 }
 
-// void draw_put_image(t_win *window, t_image *img, t_point **points)
-// {
-//     char *data;
-//     int bpp;
-//     int size_line;
-//     int endian;
+/* To do
+    1. Adjusted spacing for the image size
+    2. Connect dots with lines
+    3. Calculate the starting point so that the image is centered in the screen
+ */
+void draw_put_image(t_win *window, t_image *img, t_map *map)
+{
+    char *data;
+    int bpp;
+    int size_line;
+    int endian;
 
-//     int spacing = 50;
-//     size_t rows;
-//     size_t cols;
+    int spacing = 50;
+    int row;
+    int col;
 
-//     data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
+    data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
+    row = 0;
+    while (row < map->nrows)
+    {
+        col = 0;
+        // ft_printf("Cols %d\n", map->rows[row].ncols);
+        while (col < map->rows[row].ncols)
+        {
+            // ft_printf("Col %d\n", col);
+            // ft_printf("color%d\n", map->rows[row].cols[col].color);
 
-//     while ()
-//         for (int y = 0; y < img->height; y += spacing)
-//             for (int x = 0; x < img->width; x += spacing)
-//                 if (x - spacing >= 0 && y - spacing >= 0 &&)
-//                     *(int *)(data + (y * size_line + x * (bpp / 8))) = color;
-//     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
-// }
+            *(int *)(data + (map->rows[row].cols[col].y * size_line * spacing + map->rows[row].cols[col].x * (bpp / 8) * spacing)) = map->rows[row].cols[col].color;
+
+            col++;
+        }
+        row++;
+    }
+
+    mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
+}
 
 t_map *parse_store_map(int fd)
 {
@@ -58,12 +74,22 @@ t_map *parse_store_map(int fd)
         ft_putstr_fd("Couldn't split the map\n", 2);
         return NULL;
     }
-    ft_printf("ft_split map:\n");
     rows = ft_str_strlen(str_map);
     points = malloc(sizeof(t_point) * rows);
     map = malloc(sizeof(t_map));
+    if (!map)
+    {
+        ft_putstr_fd("Couldn't allocate memory for map\n", 2);
+        free_char_arr(str_map);
+    }
     map->nrows = rows;
     map->rows = malloc(sizeof(t_row) * rows);
+    if (!map->rows)
+    {
+        ft_putstr_fd("Couldn't allocate memory for map->rows\n", 2);
+        free_char_arr(str_map);
+        free(map);
+    }
     row = 0;
     while (row < rows)
     {
@@ -84,7 +110,6 @@ t_map *parse_store_map(int fd)
             free_char_arr(str_map);
             free_t_point_arr(points);
         }
-        // ft_printf("Map_row length: %d\n", cols);
         col = 0;
         while (col < cols)
         {
@@ -102,22 +127,19 @@ t_map *parse_store_map(int fd)
             col++;
         }
         free_char_arr(map_row);
-        map->rows[row].row = points[row];
+        map->rows[row].cols = points[row];
         map->rows[row].ncols = cols;
         row++;
     }
 
-    ft_printf("Map has %d rows\n", map->nrows);
-    for (int i = 0; i < map->nrows; i++)
-    {
-        t_row temp_row = map->rows[i];
-        for (int j = 0; j < temp_row.ncols; j++)
-        {
-            ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", temp_row.row[j].x, temp_row.row[j].y, temp_row.row[j].z, temp_row.row[j].color);
-            j++;
-        }
-        ft_printf("This row has %d columns\n", temp_row.ncols);
-    }
+    // ft_printf("Map has %d rows\n", map->nrows);
+    // for (int i = 0; i < map->nrows; i++)
+    // {
+    //     t_row temp_row = map->rows[i];
+    //     for (int j = 0; j < temp_row.ncols; j++)
+    //         ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", temp_row.cols[j].x, temp_row.cols[j].y, temp_row.cols[j].z, temp_row.cols[j].color);
+    //     ft_printf("This row has %d columns\n", temp_row.ncols);
+    // }
 
     return map;
 }
@@ -126,6 +148,7 @@ int main(int ac, char *av[])
 {
     t_win *window;
     t_image *img;
+    t_map *map;
     int fd;
 
     if (ac != 2)
@@ -156,8 +179,8 @@ int main(int ac, char *av[])
         free(window);
         return 0;
     }
-    img->width = 900;
-    img->height = 600;
+    img->width = 960;
+    img->height = 700;
     img->img_ptr = mlx_new_image(window->mlx, img->width, img->height);
     if (!img->img_ptr)
     {
@@ -166,8 +189,8 @@ int main(int ac, char *av[])
         return 0;
     }
 
-    parse_store_map(fd);
-    // draw_put_image(window, img);
+    map = parse_store_map(fd);
+    draw_put_image(window, img, map);
 
     mlx_key_hook(window->win, key_hook, window);
     mlx_hook(window->win, 17, 1L << 17, close_win, window);
