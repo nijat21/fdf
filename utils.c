@@ -42,6 +42,28 @@ void free_t_point_arr(t_point **arr)
     arr = NULL;
 }
 
+void free_map(t_map *map)
+{
+    int i;
+
+    if (!map)
+        return;
+    if (map->rows)
+    {
+        i = 0;
+        while (i < map->nrows)
+        {
+            free(map->rows[i].cols);
+            map->rows[i].cols = NULL;
+            i++;
+        }
+        free(map->rows);
+        map->rows = NULL;
+    }
+    free(map);
+    map = NULL;
+}
+
 size_t ft_str_strlen(char **str)
 {
     size_t count;
@@ -50,4 +72,20 @@ size_t ft_str_strlen(char **str)
     while (str[count])
         count++;
     return count;
+}
+
+int largest_row(t_map *map)
+{
+    int i;
+    int largest;
+
+    i = 0;
+    largest = 0;
+    while (i < map->nrows)
+    {
+        if (map->rows[i].ncols > largest)
+            largest = map->rows[i].ncols;
+        i++;
+    }
+    return largest;
 }

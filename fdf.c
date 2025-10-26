@@ -6,18 +6,88 @@ char *read_file(int fd)
 
     map = get_next_line(fd);
     if (!map)
-    {
-        free(map); // leak
         return NULL;
-    }
     return map;
 }
 
 /* To do
-    1. Adjusted spacing for the image size
-    2. Connect dots with lines
+    1. Adjusted spacing for the image size V
+    2. Connect dots with lines -> pixel-adjusted draw_line function
     3. Calculate the starting point so that the image is centered in the screen
  */
+void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color)
+{
+    int x;
+    int y;
+    int dx;
+    int dy;
+    int p;
+
+    x = x1;
+    y = y1;
+    dx = x2 - x1;
+    dy = y2 - y1;
+    p = 2 * dy - dx;
+
+    while (x <= x2)
+    {
+        *(int *)(data + (y * size_line + x * (bpp / 8))) = color;
+        x++;
+        if (p < 0)
+            p += 2 * dy;
+        else if (p > 0)
+        {
+            p += 2 * dy - 2 * dx;
+            y++;
+        }
+    }
+}
+
+// Slope-independent draw_line
+/*
+void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color)
+{
+    int dx;
+    int dy;
+    int err;
+    int sx;
+    int sy;
+
+    dx = abs(x2 - x1);
+    dy = abs(y2 - y1);
+    err = dy - dx;
+
+    if (x1 < x2)
+        sx = 1;
+    else
+        sx = -1;
+
+    if (y1 < y2)
+        sy = 1;
+    else
+        sy = -1;
+
+    while (1)
+    {
+        printf("Drawing frame\n");
+        *(int *)(data + (y1 * size_line + x1 * (bpp / 8))) = color;
+        if (x1 == x2 && y1 == y2)
+            break;
+
+        if (2 * err < -dy)
+        {
+            err -= dy;
+            x1 += sx;
+        }
+        else if (2 * err < dx)
+        {
+            err += dx;
+            y1 += sy;
+        }
+    }
+}
+     */
+
 void draw_put_image(t_win *window, t_image *img, t_map *map)
 {
     char *data;
@@ -25,7 +95,8 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     int size_line;
     int endian;
 
-    int spacing = 50;
+    int w_space = img->width / largest_row(map);
+    int h_space = img->height / map->nrows;
     int row;
     int col;
 
@@ -34,14 +105,14 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     while (row < map->nrows)
     {
         col = 0;
-        // ft_printf("Cols %d\n", map->rows[row].ncols);
-        while (col < map->rows[row].ncols)
+        while (col < map->rows[row].ncols - 1)
         {
-            // ft_printf("Col %d\n", col);
-            // ft_printf("color%d\n", map->rows[row].cols[col].color);
-
-            *(int *)(data + (map->rows[row].cols[col].y * size_line * spacing + map->rows[row].cols[col].x * (bpp / 8) * spacing)) = map->rows[row].cols[col].color;
-
+            draw_line(
+                map->rows[row].cols[col].x * w_space,
+                map->rows[row].cols[col].y * h_space,
+                map->rows[row].cols[col + 1].x * w_space,
+                map->rows[row].cols[col].y * h_space,
+                data, bpp, size_line, map->rows[row].cols[col].color);
             col++;
         }
         row++;
@@ -49,86 +120,89 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
 
     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
 }
+// draw_line(0, img->height / 2, img->width, img->height / 2,
+//           data, bpp, size_line, curr.color);
 
 t_map *parse_store_map(int fd)
 {
     char *temp_map;
     char **str_map;
+    char **map_row;
+    char **parts;
     size_t row;
-    size_t rows;
+    size_t nrows;
     size_t col;
-    size_t cols;
-    t_point **points;
+    size_t ncols;
     t_map *map;
 
     temp_map = read_file(fd);
+    close(fd);
     if (!temp_map)
     {
         ft_putstr_fd("Couldn't read the map\n", 2);
-        close(fd);
         return NULL;
     }
     str_map = ft_split(temp_map, '\n');
+    free(temp_map);
     if (!str_map)
     {
         ft_putstr_fd("Couldn't split the map\n", 2);
         return NULL;
     }
-    rows = ft_str_strlen(str_map);
-    points = malloc(sizeof(t_point) * rows);
+    nrows = ft_str_strlen(str_map);
     map = malloc(sizeof(t_map));
     if (!map)
     {
         ft_putstr_fd("Couldn't allocate memory for map\n", 2);
         free_char_arr(str_map);
+        return NULL;
     }
-    map->nrows = rows;
-    map->rows = malloc(sizeof(t_row) * rows);
+    map->nrows = nrows;
+    map->rows = malloc(sizeof(t_row) * nrows);
     if (!map->rows)
     {
         ft_putstr_fd("Couldn't allocate memory for map->rows\n", 2);
         free_char_arr(str_map);
-        free(map);
+        free_map(map);
+        return NULL;
     }
     row = 0;
-    while (row < rows)
+    while (row < nrows)
     {
         // ft_printf("row %d\n", row);
-        char **map_row = ft_split(str_map[row], ' ');
+        map_row = ft_split(str_map[row], ' ');
         if (!map_row)
         {
             ft_putstr_fd("Couldn't split the map row\n", 2);
             free_char_arr(str_map);
-            free(points);
+            free_map(map);
             return NULL;
         }
-        cols = ft_str_strlen(map_row);
-        points[row] = malloc(sizeof(t_point) * cols);
-        if (!points[row])
+        ncols = ft_str_strlen(map_row);
+        map->rows[row].cols = malloc(sizeof(t_point) * ncols);
+        if (!map->rows[row].cols)
         {
             ft_putstr_fd("Couldn't allocate memory for the row\n", 2);
             free_char_arr(str_map);
-            free_t_point_arr(points);
+            free_map(map);
+            return NULL;
         }
         col = 0;
-        while (col < cols)
+        while (col < ncols)
         {
-            // ft_printf("col %d\n", col);
-            char **parts = ft_split(map_row[col], ',');
-            points[row][col].x = col;
-            points[row][col].y = row;
-            points[row][col].z = ft_atoi(parts[0]);
+            parts = ft_split(map_row[col], ',');
+            map->rows[row].cols[col].x = col;
+            map->rows[row].cols[col].y = row;
+            map->rows[row].cols[col].z = ft_atoi(parts[0]);
             if (parts[1])
-                points[row][col].color = ft_atoi_base(parts[1], 16);
+                map->rows[row].cols[col].color = ft_atoi_base(parts[1], 16);
             else
-                points[row][col].color = 0xFFFFFF;
-            // ft_printf("color %s\n", parts[1]);
+                map->rows[row].cols[col].color = 0xFFFFFF;
             free_char_arr(parts);
             col++;
         }
         free_char_arr(map_row);
-        map->rows[row].cols = points[row];
-        map->rows[row].ncols = cols;
+        map->rows[row].ncols = ncols;
         row++;
     }
 
