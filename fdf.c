@@ -10,83 +10,63 @@ char *read_file(int fd)
     return map;
 }
 
-/* To do
-    1. Adjusted spacing for the image size V
-    2. Connect dots with lines -> pixel-adjusted draw_line function
-    3. Calculate the starting point so that the image is centered in the screen
- */
-void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color)
-{
-    int x;
-    int y;
-    int dx;
-    int dy;
-    int p;
-
-    x = x1;
-    y = y1;
-    dx = x2 - x1;
-    dy = y2 - y1;
-    p = 2 * dy - dx;
-
-    while (x <= x2)
-    {
-        *(int *)(data + (y * size_line + x * (bpp / 8))) = color;
-        x++;
-        if (p < 0)
-            p += 2 * dy;
-        else if (p > 0)
-        {
-            p += 2 * dy - 2 * dx;
-            y++;
-        }
-    }
-}
-
-// Slope-independent draw_line
-/*
+// Bresenham's algorithm
 void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color)
 {
     int dx;
     int dy;
-    int err;
+    int e;
     int sx;
     int sy;
 
     dx = abs(x2 - x1);
-    dy = abs(y2 - y1);
-    err = dy - dx;
-
     if (x1 < x2)
         sx = 1;
     else
         sx = -1;
-
+    dy = -abs(y2 - y1);
     if (y1 < y2)
         sy = 1;
     else
         sy = -1;
+    e = dy + dx;
 
     while (1)
     {
-        printf("Drawing frame\n");
         *(int *)(data + (y1 * size_line + x1 * (bpp / 8))) = color;
         if (x1 == x2 && y1 == y2)
             break;
-
-        if (2 * err < -dy)
+        if (2 * e >= dy)
         {
-            err -= dy;
+            if (x1 == x2)
+                break;
+            e += dy;
             x1 += sx;
         }
-        else if (2 * err < dx)
+        if (2 * e <= dx)
         {
-            err += dx;
+            if (y1 == y2)
+                break;
+            e += dx;
             y1 += sy;
         }
     }
 }
-     */
+
+void calculate_offset(t_image *img, t_map *map, int *offset_x, int *offset_y)
+{
+    int w_space;
+    int h_space;
+    int grid_width;
+    int grid_height;
+
+    w_space = img->width / largest_row(map);
+    h_space = img->height / map->nrows;
+    grid_width = (largest_row(map) - 1) * w_space;
+    grid_height = (map->nrows - 1) * h_space;
+    *offset_x = (img->width - grid_width) / 2;
+    *offset_y = (img->height - grid_height) / 2;
+}
 
 void draw_put_image(t_win *window, t_image *img, t_map *map)
 {
@@ -94,34 +74,55 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     int bpp;
     int size_line;
     int endian;
-
     int w_space = img->width / largest_row(map);
     int h_space = img->height / map->nrows;
     int row;
     int col;
+    int offset_x;
+    int offset_y;
 
     data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
+    calculate_offset(img, map, &offset_x, &offset_y);
+    // Horizontal connections
     row = 0;
     while (row < map->nrows)
     {
         col = 0;
         while (col < map->rows[row].ncols - 1)
         {
-            draw_line(
-                map->rows[row].cols[col].x * w_space,
-                map->rows[row].cols[col].y * h_space,
-                map->rows[row].cols[col + 1].x * w_space,
-                map->rows[row].cols[col].y * h_space,
-                data, bpp, size_line, map->rows[row].cols[col].color);
+            if (map->rows[row].cols[col].x >= 0 && map->rows[row].cols[col].y >= 0 &&
+                map->rows[row].cols[col].x < img->width && map->rows[row].cols[col].y < img->height)
+                draw_line(
+                    map->rows[row].cols[col].x * w_space + offset_x,
+                    map->rows[row].cols[col].y * h_space + offset_y,
+                    map->rows[row].cols[col + 1].x * w_space + offset_x,
+                    map->rows[row].cols[col].y * h_space + offset_y,
+                    data, bpp, size_line, map->rows[row].cols[col].color);
             col++;
         }
         row++;
     }
-
-    mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, 0, 0);
+    // Vertical connections
+    row = 0;
+    while (row < map->nrows - 1)
+    {
+        col = 0;
+        while (col < map->rows[row].ncols && col < map->rows[row + 1].ncols)
+        {
+            if (map->rows[row].cols[col].x >= 0 && map->rows[row].cols[col].y >= 0 &&
+                map->rows[row].cols[col].x < img->width && map->rows[row].cols[col].y < img->height)
+                draw_line(
+                    map->rows[row].cols[col].x * w_space + offset_x,
+                    map->rows[row].cols[col].y * h_space + offset_y,
+                    map->rows[row + 1].cols[col].x * w_space + offset_x,
+                    map->rows[row + 1].cols[col].y * h_space + offset_y,
+                    data, bpp, size_line, map->rows[row].cols[col].color);
+            col++;
+        }
+        row++;
+    }
+    mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, window->width / 2 - img->width / 2, (window->height - img->height) / 2);
 }
-// draw_line(0, img->height / 2, img->width, img->height / 2,
-//           data, bpp, size_line, curr.color);
 
 t_map *parse_store_map(int fd)
 {
