@@ -4,7 +4,7 @@ NAME=fdf
 CC=cc
 CFLAGS= -g -Wall -Wextra -Werror
 
-SRCS:= fdf.c utils.c hooks.c
+SRCS:= fdf.c projection.c utils.c hooks.c
 OBJS:=$(SRCS:%.c=%.o)
 
 LIBFT_DIR=Libft

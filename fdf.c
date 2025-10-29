@@ -44,35 +44,11 @@ void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_lin
     }
 }
 
-void apply_isometric(int *x, int *y, int z, int z_scale)
-{
-    int prev_x;
-    int prev_y;
-
-    prev_x = *x;
-    prev_y = *y;
-    *x = (prev_x - prev_y);
-    *y = (prev_x + prev_y) / 2 - z * z_scale;
-}
-
-// void apply_isometric(int *x, int *y, int z, int z_scale)
-// {
-//     int prev_x = *x;
-//     int prev_y = *y;
-//     int x_rot, y_rot;
-
-//     // 90° CCW rotation
-//     x_rot = prev_y;
-//     y_rot = -prev_x;
-
-//     /* Apply isometric projection to rotated point */
-//     *x = (x_rot - y_rot);
-//     *y = (x_rot + y_rot) / 2 - z * z_scale;
-// }
-
 /*
+    ****  BUFFERING
     ****  REFACTOR, TEST AND DEBUG
-    1. Coloring and gradient by height
+    ****  PROXIMATION TO THE SAMPLE FDF_LINUX
+
     2. Zoom bonus
     3. Rotate bonus
     4. Additional perspective bonus
@@ -80,10 +56,14 @@ void apply_isometric(int *x, int *y, int z, int z_scale)
 void get_map_bounds(t_map *map, int w_space, int h_space,
                     int *min_x, int *max_x, int *min_y, int *max_y, int z_scale)
 {
-    int row = 0;
-    int x, y, z;
-    int is_first = 1;
+    int row;
+    int x;
+    int y;
+    int z;
+    int is_first;
 
+    is_first = 1;
+    row = 0;
     while (row < map->nrows)
     {
         int col = 0;
@@ -135,46 +115,33 @@ void calculate_offset(t_image *img, t_map *map, int w_space, int h_space, int *o
     *offset_y = (img->height - height) / 2 - min_y;
 }
 
-int calculate_z_scale(t_map *map, t_image *img)
+int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z)
 {
-    double max_z;
-    double min_z;
+    double max;
+    double min;
     double z_scale;
     int row;
 
-    min_z = INFINITY;
-    max_z = -INFINITY;
+    min = INFINITY;
+    max = -INFINITY;
     row = 0;
     while (row < map->nrows)
     {
         int col = 0;
         while (col < map->rows[row].ncols)
         {
-            if (map->rows[row].cols[col].z < min_z)
-                min_z = map->rows[row].cols[col].z;
-            if (map->rows[row].cols[col].z > max_z)
-                max_z = map->rows[row].cols[col].z;
+            if (map->rows[row].cols[col].z < min)
+                min = map->rows[row].cols[col].z;
+            if (map->rows[row].cols[col].z > max)
+                max = map->rows[row].cols[col].z;
             col++;
         }
         row++;
     }
-    z_scale = (img->height / 4) / ((max_z - min_z) + 1);
-    z_scale = fmax(1, z_scale);
-    return (int)z_scale;
-}
-
-// additional perspective
-void paralel_perspective(int *x, int *y, t_win *window, t_image *img)
-{
-    int iso_x;
-    int iso_y;
-    float depth;
-
-    iso_x = *x;
-    iso_y = *y;
-    depth = 2000.0f / (2000.0f - iso_y);
-    *x = (window->width - img->width) / 2 + iso_x * depth;
-    *y = (window->height - img->height) / 2 + iso_y * depth;
+    *min_z = min;
+    *max_z = max;
+    z_scale = (img->height / 8) / ((max - min) + 1);
+    return (int)fmax(4, z_scale);
 }
 
 void draw_put_image(t_win *window, t_image *img, t_map *map)
@@ -188,6 +155,10 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     int offset_x;
     int offset_y;
     int z_scale;
+    int min_z;
+    int max_z;
+
+    int color;
 
     int x1;
     int y1;
@@ -197,10 +168,10 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     int y2;
     int z2;
 
-    int w_space = img->width / (largest_row(map) * 2);
-    int h_space = img->height / (map->nrows * 2);
+    int w_space = (int)fmax(2, img->width / (largest_row(map) * 2));
+    int h_space = (int)fmax(2, img->height / (map->nrows * 2));
 
-    z_scale = calculate_z_scale(map, img);
+    z_scale = calculate_z_scale(map, img, &min_z, &max_z);
 
     data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
     calculate_offset(img, map, w_space, h_space, &offset_x, &offset_y, z_scale);
@@ -229,7 +200,7 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
                 y1 + offset_y,
                 x2 + offset_x,
                 y2 + offset_y,
-                data, bpp, size_line, map->rows[row].cols[col].color, img);
+                data, bpp, size_line, height_color(map->rows[row].cols[col].z, min_z, max_z, map->rows[row].cols[col].color), img);
             col++;
         }
         row++;
@@ -254,12 +225,17 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
             // paralel_perspective(&x1, &y1, window, img);
             // paralel_perspective(&x2, &y2, window, img);
 
+            if (map->rows[row].cols[col].color == 0x69F5D5)
+                color = height_color(map->rows[row].cols[col].z, min_z, max_z, map->rows[row].cols[col].color);
+            else
+                color = map->rows[row].cols[col].color;
+
             draw_line(
                 x1 + offset_x,
                 y1 + offset_y,
                 x2 + offset_x,
                 y2 + offset_y,
-                data, bpp, size_line, map->rows[row].cols[col].color, img);
+                data, bpp, size_line, color, img);
             col++;
         }
         row++;
