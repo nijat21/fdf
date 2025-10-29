@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/07 17:46:05 by nismayil          #+#    #+#             */
-/*   Updated: 2025/08/05 00:44:42 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/10/29 10:16:09 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,12 +37,6 @@ void ft_strcpy(char *des, char *src)
 		i++;
 	}
 	des[i] = '\0';
-	i++;
-	while (des[i])
-	{
-		des[i] = '\0';
-		i++;
-	}
 	return;
 }
 
@@ -54,7 +48,7 @@ char *make_line(char *str, int *index)
 
 	if (!str)
 		return (NULL);
-	len = ft_strlen(str);
+	len = gnl_strlen(str);
 	*index = len;
 	new_line = malloc(len + 1);
 	if (!new_line)

@@ -1,17 +1,7 @@
 #include "fdf.h"
 
-char *read_file(int fd)
-{
-    char *map;
-
-    map = get_next_line(fd);
-    if (!map)
-        return NULL;
-    return map;
-}
-
 // Bresenham's algorithm
-void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color)
+void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color, t_image *img)
 {
     int dx;
     int dy;
@@ -33,7 +23,8 @@ void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_lin
 
     while (1)
     {
-        *(int *)(data + (y1 * size_line + x1 * (bpp / 8))) = color;
+        if (x1 >= 0 && x1 < img->width && y1 >= 0 && y1 < img->height)
+            *(int *)(data + (y1 * size_line + x1 * (bpp / 8))) = color;
         if (x1 == x2 && y1 == y2)
             break;
         if (2 * e >= dy)
@@ -53,19 +44,137 @@ void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_lin
     }
 }
 
-void calculate_offset(t_image *img, t_map *map, int *offset_x, int *offset_y)
+void apply_isometric(int *x, int *y, int z, int z_scale)
 {
-    int w_space;
-    int h_space;
-    int grid_width;
-    int grid_height;
+    int prev_x;
+    int prev_y;
 
-    w_space = img->width / largest_row(map);
-    h_space = img->height / map->nrows;
-    grid_width = (largest_row(map) - 1) * w_space;
-    grid_height = (map->nrows - 1) * h_space;
-    *offset_x = (img->width - grid_width) / 2;
-    *offset_y = (img->height - grid_height) / 2;
+    prev_x = *x;
+    prev_y = *y;
+    *x = (prev_x - prev_y);
+    *y = (prev_x + prev_y) / 2 - z * z_scale;
+}
+
+// void apply_isometric(int *x, int *y, int z, int z_scale)
+// {
+//     int prev_x = *x;
+//     int prev_y = *y;
+//     int x_rot, y_rot;
+
+//     // 90° CCW rotation
+//     x_rot = prev_y;
+//     y_rot = -prev_x;
+
+//     /* Apply isometric projection to rotated point */
+//     *x = (x_rot - y_rot);
+//     *y = (x_rot + y_rot) / 2 - z * z_scale;
+// }
+
+/*
+    ****  REFACTOR, TEST AND DEBUG
+    1. Coloring and gradient by height
+    2. Zoom bonus
+    3. Rotate bonus
+    4. Additional perspective bonus
+*/
+void get_map_bounds(t_map *map, int w_space, int h_space,
+                    int *min_x, int *max_x, int *min_y, int *max_y, int z_scale)
+{
+    int row = 0;
+    int x, y, z;
+    int is_first = 1;
+
+    while (row < map->nrows)
+    {
+        int col = 0;
+        while (col < map->rows[row].ncols)
+        {
+            // Get the point position
+            x = col * w_space;
+            y = row * h_space;
+            z = map->rows[row].cols[col].z;
+
+            // Transform it to isometric
+            apply_isometric(&x, &y, z, z_scale);
+
+            // Update min/max values
+            if (is_first)
+            {
+                *min_x = *max_x = x;
+                *min_y = *max_y = y;
+                is_first = 0;
+            }
+            else
+            {
+                if (x < *min_x)
+                    *min_x = x;
+                if (x > *max_x)
+                    *max_x = x;
+                if (y < *min_y)
+                    *min_y = y;
+                if (y > *max_y)
+                    *max_y = y;
+            }
+            col++;
+        }
+        row++;
+    }
+}
+
+void calculate_offset(t_image *img, t_map *map, int w_space, int h_space, int *offset_x, int *offset_y, int z_scale)
+{
+    int min_x, max_x, min_y, max_y;
+    int width, height;
+
+    get_map_bounds(map, w_space, h_space, &min_x, &max_x, &min_y, &max_y, z_scale);
+
+    width = max_x - min_x;
+    height = max_y - min_y;
+
+    *offset_x = (img->width - width) / 2 - min_x;
+    *offset_y = (img->height - height) / 2 - min_y;
+}
+
+int calculate_z_scale(t_map *map, t_image *img)
+{
+    double max_z;
+    double min_z;
+    double z_scale;
+    int row;
+
+    min_z = INFINITY;
+    max_z = -INFINITY;
+    row = 0;
+    while (row < map->nrows)
+    {
+        int col = 0;
+        while (col < map->rows[row].ncols)
+        {
+            if (map->rows[row].cols[col].z < min_z)
+                min_z = map->rows[row].cols[col].z;
+            if (map->rows[row].cols[col].z > max_z)
+                max_z = map->rows[row].cols[col].z;
+            col++;
+        }
+        row++;
+    }
+    z_scale = (img->height / 4) / ((max_z - min_z) + 1);
+    z_scale = fmax(1, z_scale);
+    return (int)z_scale;
+}
+
+// additional perspective
+void paralel_perspective(int *x, int *y, t_win *window, t_image *img)
+{
+    int iso_x;
+    int iso_y;
+    float depth;
+
+    iso_x = *x;
+    iso_y = *y;
+    depth = 2000.0f / (2000.0f - iso_y);
+    *x = (window->width - img->width) / 2 + iso_x * depth;
+    *y = (window->height - img->height) / 2 + iso_y * depth;
 }
 
 void draw_put_image(t_win *window, t_image *img, t_map *map)
@@ -74,15 +183,27 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     int bpp;
     int size_line;
     int endian;
-    int w_space = img->width / largest_row(map);
-    int h_space = img->height / map->nrows;
     int row;
     int col;
     int offset_x;
     int offset_y;
+    int z_scale;
+
+    int x1;
+    int y1;
+    int z1;
+
+    int x2;
+    int y2;
+    int z2;
+
+    int w_space = img->width / (largest_row(map) * 2);
+    int h_space = img->height / (map->nrows * 2);
+
+    z_scale = calculate_z_scale(map, img);
 
     data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
-    calculate_offset(img, map, &offset_x, &offset_y);
+    calculate_offset(img, map, w_space, h_space, &offset_x, &offset_y, z_scale);
     // Horizontal connections
     row = 0;
     while (row < map->nrows)
@@ -90,14 +211,25 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
         col = 0;
         while (col < map->rows[row].ncols - 1)
         {
-            if (map->rows[row].cols[col].x >= 0 && map->rows[row].cols[col].y >= 0 &&
-                map->rows[row].cols[col].x < img->width && map->rows[row].cols[col].y < img->height)
-                draw_line(
-                    map->rows[row].cols[col].x * w_space + offset_x,
-                    map->rows[row].cols[col].y * h_space + offset_y,
-                    map->rows[row].cols[col + 1].x * w_space + offset_x,
-                    map->rows[row].cols[col].y * h_space + offset_y,
-                    data, bpp, size_line, map->rows[row].cols[col].color);
+            x1 = col * w_space;
+            y1 = row * h_space;
+            z1 = map->rows[row].cols[col].z;
+
+            x2 = (col + 1) * w_space;
+            y2 = row * h_space;
+            z2 = map->rows[row].cols[col + 1].z;
+
+            apply_isometric(&x1, &y1, z1, z_scale);
+            apply_isometric(&x2, &y2, z2, z_scale);
+            // paralel_perspective(&x1, &y1, window, img);
+            // paralel_perspective(&x2, &y2, window, img);
+
+            draw_line(
+                x1 + offset_x,
+                y1 + offset_y,
+                x2 + offset_x,
+                y2 + offset_y,
+                data, bpp, size_line, map->rows[row].cols[col].color, img);
             col++;
         }
         row++;
@@ -109,19 +241,30 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
         col = 0;
         while (col < map->rows[row].ncols && col < map->rows[row + 1].ncols)
         {
-            if (map->rows[row].cols[col].x >= 0 && map->rows[row].cols[col].y >= 0 &&
-                map->rows[row].cols[col].x < img->width && map->rows[row].cols[col].y < img->height)
-                draw_line(
-                    map->rows[row].cols[col].x * w_space + offset_x,
-                    map->rows[row].cols[col].y * h_space + offset_y,
-                    map->rows[row + 1].cols[col].x * w_space + offset_x,
-                    map->rows[row + 1].cols[col].y * h_space + offset_y,
-                    data, bpp, size_line, map->rows[row].cols[col].color);
+            x1 = col * w_space;
+            y1 = row * h_space;
+            z1 = map->rows[row].cols[col].z;
+
+            x2 = col * w_space;
+            y2 = (row + 1) * h_space;
+            z2 = map->rows[row + 1].cols[col].z;
+
+            apply_isometric(&x1, &y1, z1, z_scale);
+            apply_isometric(&x2, &y2, z2, z_scale);
+            // paralel_perspective(&x1, &y1, window, img);
+            // paralel_perspective(&x2, &y2, window, img);
+
+            draw_line(
+                x1 + offset_x,
+                y1 + offset_y,
+                x2 + offset_x,
+                y2 + offset_y,
+                data, bpp, size_line, map->rows[row].cols[col].color, img);
             col++;
         }
         row++;
     }
-    mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, window->width / 2 - img->width / 2, (window->height - img->height) / 2);
+    mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, (window->width - img->width) / 2, (window->height - img->height) / 2);
 }
 
 t_map *parse_store_map(int fd)
@@ -192,13 +335,11 @@ t_map *parse_store_map(int fd)
         while (col < ncols)
         {
             parts = ft_split(map_row[col], ',');
-            map->rows[row].cols[col].x = col;
-            map->rows[row].cols[col].y = row;
             map->rows[row].cols[col].z = ft_atoi(parts[0]);
             if (parts[1])
                 map->rows[row].cols[col].color = ft_atoi_base(parts[1], 16);
             else
-                map->rows[row].cols[col].color = 0xFFFFFF;
+                map->rows[row].cols[col].color = 0x69F5D5;
             free_char_arr(parts);
             col++;
         }
@@ -212,7 +353,7 @@ t_map *parse_store_map(int fd)
     // {
     //     t_row temp_row = map->rows[i];
     //     for (int j = 0; j < temp_row.ncols; j++)
-    //         ft_printf("X: %d, Y: %d, Z: %d, C: %d\n", temp_row.cols[j].x, temp_row.cols[j].y, temp_row.cols[j].z, temp_row.cols[j].color);
+    //         ft_printf("Z: %d, C: %d\n", temp_row.cols[j].z, temp_row.cols[j].color);
     //     ft_printf("This row has %d columns\n", temp_row.ncols);
     // }
 
@@ -254,8 +395,8 @@ int main(int ac, char *av[])
         free(window);
         return 0;
     }
-    img->width = 960;
-    img->height = 700;
+    img->width = window->width;
+    img->height = window->height;
     img->img_ptr = mlx_new_image(window->mlx, img->width, img->height);
     if (!img->img_ptr)
     {

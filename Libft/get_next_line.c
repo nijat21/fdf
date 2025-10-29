@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/07 17:45:49 by nismayil          #+#    #+#             */
-/*   Updated: 2025/01/22 23:01:26 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/10/28 20:25:26 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ char *get_next_line(int fd)
 				free(nl);
 				return (NULL);
 			}
-			buf[BUFFER_SIZE] = '\0';
+			buf[bytes_read] = '\0';
 		}
 		create_merge(&nl, buf);
 		if (!nl || nl[ft_strlen(nl) - 1] == '\n')

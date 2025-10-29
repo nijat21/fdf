@@ -29,8 +29,6 @@ typedef struct s_image
 
 typedef struct s_point
 {
-    int x;
-    int y;
     int z;
     int color;
 } t_point;
@@ -62,6 +60,7 @@ void free_t_point_arr(t_point **arr);
 void free_map(t_map *map);
 size_t ft_str_strlen(char **str);
 int largest_row(t_map *map);
+char *read_file(int fd);
 
 // hooks
 int key_hook(int keycode, t_win *vars);

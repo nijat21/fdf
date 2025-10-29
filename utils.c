@@ -1,19 +1,5 @@
 #include "fdf.h"
 
-int rgb_to_int(double r, double g, double b)
-{
-    int color = 0;
-    color |= (int)(b * 255);
-    color |= (int)(g * 255) << 8;
-    color |= (int)(r * 255) << 16;
-    return (color);
-}
-
-int normalize_y(int curr, int total)
-{
-    return total - curr;
-}
-
 void free_char_arr(char **arr)
 {
     int i;
@@ -88,4 +74,30 @@ int largest_row(t_map *map)
         i++;
     }
     return largest;
+}
+
+char *read_file(int fd)
+{
+    char *line;
+    char *full_map;
+    char *temp;
+
+    int nlines = 0;
+
+    full_map = NULL;
+    line = get_next_line(fd);
+    while (line != NULL)
+    {
+        nlines++;
+        temp = ft_strjoin(full_map, line);
+        free(line);
+        free(full_map);
+        full_map = temp;
+        if (full_map == NULL)
+        {
+            return (NULL);
+        }
+        line = get_next_line(fd);
+    }
+    return (full_map);
 }
