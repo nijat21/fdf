@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   fdf.h                                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/31 00:18:38 by nismayil          #+#    #+#             */
+/*   Updated: 2025/10/31 00:55:15 by nismayil         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef FDF_H
 #define FDF_H
 
@@ -27,6 +39,20 @@ typedef struct s_image
     void *img_ptr;
 } t_image;
 
+typedef struct s_img_props
+{
+    char *data;
+    int bpp;
+    int size_line;
+    int endian;
+} t_img_props;
+
+typedef struct s_img_all
+{
+    t_image *img;
+    t_img_props img_props;
+} t_img_all;
+
 typedef struct s_point
 {
     int z;
@@ -45,12 +71,35 @@ typedef struct s_map
     t_row *rows;
 } t_map;
 
-/*
-[
-    nrows
-    [(point1, ncols1), (point2, ncols2)]
-]
- */
+typedef struct s_coordinates
+{
+    int x1;
+    int x2;
+    int y1;
+    int y2;
+    int z1;
+    int z2;
+    int color;
+} t_coordinates;
+
+typedef struct s_space
+{
+    int w_space;
+    int h_space;
+    int offset_x;
+    int offset_y;
+} t_space;
+
+typedef struct s_bounds
+{
+    int min_x;
+    int min_y;
+    int max_x;
+    int max_y;
+    int min_z;
+    int max_z;
+    int z_scale;
+} t_bounds;
 
 // utils
 void free_char_arr(char **arr);
@@ -61,6 +110,8 @@ int largest_row(t_map *map);
 char *read_file(int fd);
 int height_color(int z, double min_z, double max_z, int color_high);
 void apply_isometric(int *x, int *y, int z, int z_scale);
+void calculate_offset(t_image *img, t_map *map, t_bounds *bounds, t_space *spaces);
+int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z);
 
 // hooks
 int key_hook(int keycode, t_win *vars);

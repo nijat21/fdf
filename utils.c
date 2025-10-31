@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/31 00:16:55 by nismayil          #+#    #+#             */
+/*   Updated: 2025/10/31 00:18:07 by nismayil         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "fdf.h"
 
 void free_char_arr(char **arr)
@@ -82,13 +94,10 @@ char *read_file(int fd)
     char *full_map;
     char *temp;
 
-    int nlines = 0;
-
     full_map = NULL;
     line = get_next_line(fd);
     while (line != NULL)
     {
-        nlines++;
         temp = ft_strjoin(full_map, line);
         free(line);
         free(full_map);

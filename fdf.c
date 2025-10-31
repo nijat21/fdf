@@ -1,7 +1,19 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   fdf.c                                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/31 00:18:55 by nismayil          #+#    #+#             */
+/*   Updated: 2025/10/31 00:58:03 by nismayil         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "fdf.h"
 
 // Bresenham's algorithm
-void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_line, int color, t_image *img)
+void draw_line(t_coordinates coors, t_img_props img_props, t_image *img)
 {
     int dx;
     int dy;
@@ -9,13 +21,13 @@ void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_lin
     int sx;
     int sy;
 
-    dx = abs(x2 - x1);
-    if (x1 < x2)
+    dx = abs(coors.x2 - coors.x1);
+    if (coors.x1 < coors.x2)
         sx = 1;
     else
         sx = -1;
-    dy = -abs(y2 - y1);
-    if (y1 < y2)
+    dy = -abs(coors.y2 - coors.y1);
+    if (coors.y1 < coors.y2)
         sy = 1;
     else
         sy = -1;
@@ -23,97 +35,32 @@ void draw_line(int x1, int y1, int x2, int y2, char *data, int bpp, int size_lin
 
     while (1)
     {
-        if (x1 >= 0 && x1 < img->width && y1 >= 0 && y1 < img->height)
-            *(int *)(data + (y1 * size_line + x1 * (bpp / 8))) = color;
-        if (x1 == x2 && y1 == y2)
+        if (coors.x1 >= 0 && coors.x1 < img->width && coors.y1 >= 0 && coors.y1 < img->height)
+            *(int *)(img_props.data + (coors.y1 * (img_props.size_line) + coors.x1 * (img_props.bpp / 8))) = coors.color;
+        if (coors.x1 == coors.x2 && coors.y1 == coors.y2)
             break;
         if (2 * e >= dy)
         {
-            if (x1 == x2)
+            if (coors.x1 == coors.x2)
                 break;
             e += dy;
-            x1 += sx;
+            coors.x1 += sx;
         }
         if (2 * e <= dx)
         {
-            if (y1 == y2)
+            if (coors.y1 == coors.y2)
                 break;
             e += dx;
-            y1 += sy;
+            coors.y1 += sy;
         }
     }
 }
 
 /*
-    ****  BUFFERING
-    ****  REFACTOR, TEST AND DEBUG
-    ****  PROXIMATION TO THE SAMPLE FDF_LINUX
-
-    2. Zoom bonus
-    3. Rotate bonus
-    4. Additional perspective bonus
+****  REFACTOR, TEST AND DEBUG
+****  BUFFERING
+****  PROXIMATION TO THE SAMPLE FDF_LINUX
 */
-void get_map_bounds(t_map *map, int w_space, int h_space,
-                    int *min_x, int *max_x, int *min_y, int *max_y, int z_scale)
-{
-    int row;
-    int x;
-    int y;
-    int z;
-    int is_first;
-
-    is_first = 1;
-    row = 0;
-    while (row < map->nrows)
-    {
-        int col = 0;
-        while (col < map->rows[row].ncols)
-        {
-            // Get the point position
-            x = col * w_space;
-            y = row * h_space;
-            z = map->rows[row].cols[col].z;
-
-            // Transform it to isometric
-            apply_isometric(&x, &y, z, z_scale);
-
-            // Update min/max values
-            if (is_first)
-            {
-                *min_x = *max_x = x;
-                *min_y = *max_y = y;
-                is_first = 0;
-            }
-            else
-            {
-                if (x < *min_x)
-                    *min_x = x;
-                if (x > *max_x)
-                    *max_x = x;
-                if (y < *min_y)
-                    *min_y = y;
-                if (y > *max_y)
-                    *max_y = y;
-            }
-            col++;
-        }
-        row++;
-    }
-}
-
-void calculate_offset(t_image *img, t_map *map, int w_space, int h_space, int *offset_x, int *offset_y, int z_scale)
-{
-    int min_x, max_x, min_y, max_y;
-    int width, height;
-
-    get_map_bounds(map, w_space, h_space, &min_x, &max_x, &min_y, &max_y, z_scale);
-
-    width = max_x - min_x;
-    height = max_y - min_y;
-
-    *offset_x = (img->width - width) / 2 - min_x;
-    *offset_y = (img->height - height) / 2 - min_y;
-}
 
 int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z)
 {
@@ -140,106 +87,91 @@ int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z)
     }
     *min_z = min;
     *max_z = max;
-    z_scale = (img->height / 8) / ((max - min) + 1);
-    return (int)fmax(4, z_scale);
+    z_scale = (img->height / 6) / ((max - min) + 1);
+    return (int)fmax(3, z_scale);
 }
 
-void draw_put_image(t_win *window, t_image *img, t_map *map)
+void apply_offset(t_coordinates *coors, t_space *spaces)
 {
-    char *data;
-    int bpp;
-    int size_line;
-    int endian;
+    (*coors).x1 += (*spaces).offset_x;
+    (*coors).x2 += (*spaces).offset_x;
+    (*coors).y1 += (*spaces).offset_y;
+    (*coors).y2 += (*spaces).offset_y;
+}
+
+void horizontal_lines(t_map *map, t_space spaces, t_bounds bounds, t_img_all img_all)
+{
     int row;
     int col;
-    int offset_x;
-    int offset_y;
-    int z_scale;
-    int min_z;
-    int max_z;
+    t_coordinates coors;
 
-    int color;
-
-    int x1;
-    int y1;
-    int z1;
-
-    int x2;
-    int y2;
-    int z2;
-
-    int w_space = (int)fmax(2, img->width / (largest_row(map) * 2));
-    int h_space = (int)fmax(2, img->height / (map->nrows * 2));
-
-    z_scale = calculate_z_scale(map, img, &min_z, &max_z);
-
-    data = mlx_get_data_addr(img->img_ptr, &bpp, &size_line, &endian);
-    calculate_offset(img, map, w_space, h_space, &offset_x, &offset_y, z_scale);
-    // Horizontal connections
     row = 0;
     while (row < map->nrows)
     {
         col = 0;
         while (col < map->rows[row].ncols - 1)
         {
-            x1 = col * w_space;
-            y1 = row * h_space;
-            z1 = map->rows[row].cols[col].z;
-
-            x2 = (col + 1) * w_space;
-            y2 = row * h_space;
-            z2 = map->rows[row].cols[col + 1].z;
-
-            apply_isometric(&x1, &y1, z1, z_scale);
-            apply_isometric(&x2, &y2, z2, z_scale);
-            // paralel_perspective(&x1, &y1, window, img);
-            // paralel_perspective(&x2, &y2, window, img);
-
-            draw_line(
-                x1 + offset_x,
-                y1 + offset_y,
-                x2 + offset_x,
-                y2 + offset_y,
-                data, bpp, size_line, height_color(map->rows[row].cols[col].z, min_z, max_z, map->rows[row].cols[col].color), img);
+            coors.x1 = col * spaces.w_space;
+            coors.y1 = row * spaces.h_space;
+            coors.z1 = map->rows[row].cols[col].z;
+            coors.x2 = (col + 1) * spaces.w_space;
+            coors.y2 = row * spaces.h_space;
+            coors.z2 = map->rows[row].cols[col + 1].z;
+            apply_isometric(&coors.x1, &coors.y1, coors.z1, bounds.z_scale);
+            apply_isometric(&coors.x2, &coors.y2, coors.z2, bounds.z_scale);
+            apply_offset(&coors, &spaces);
+            coors.color = height_color((coors.z1 + coors.z2) / 2, bounds.min_z, bounds.max_z, map->rows[row].cols[col].color);
+            draw_line(coors, img_all.img_props, img_all.img);
             col++;
         }
         row++;
     }
-    // Vertical connections
+}
+
+void vertical_lines(t_map *map, t_space spaces, t_bounds bounds, t_img_all img_all)
+{
+    int row;
+    int col;
+    t_coordinates coors;
+
     row = 0;
     while (row < map->nrows - 1)
     {
         col = 0;
         while (col < map->rows[row].ncols && col < map->rows[row + 1].ncols)
         {
-            x1 = col * w_space;
-            y1 = row * h_space;
-            z1 = map->rows[row].cols[col].z;
-
-            x2 = col * w_space;
-            y2 = (row + 1) * h_space;
-            z2 = map->rows[row + 1].cols[col].z;
-
-            apply_isometric(&x1, &y1, z1, z_scale);
-            apply_isometric(&x2, &y2, z2, z_scale);
-            // paralel_perspective(&x1, &y1, window, img);
-            // paralel_perspective(&x2, &y2, window, img);
-
-            if (map->rows[row].cols[col].color == 0x69F5D5)
-                color = height_color(map->rows[row].cols[col].z, min_z, max_z, map->rows[row].cols[col].color);
-            else
-                color = map->rows[row].cols[col].color;
-
-            draw_line(
-                x1 + offset_x,
-                y1 + offset_y,
-                x2 + offset_x,
-                y2 + offset_y,
-                data, bpp, size_line, color, img);
+            coors.x1 = col * spaces.w_space;
+            coors.y1 = row * spaces.h_space;
+            coors.z1 = map->rows[row].cols[col].z;
+            coors.x2 = col * spaces.w_space;
+            coors.y2 = (row + 1) * spaces.h_space;
+            coors.z2 = map->rows[row + 1].cols[col].z;
+            apply_isometric(&coors.x1, &coors.y1, coors.z1, bounds.z_scale);
+            apply_isometric(&coors.x2, &coors.y2, coors.z2, bounds.z_scale);
+            apply_offset(&coors, &spaces);
+            coors.color = height_color((coors.z1 + coors.z2) / 2, bounds.min_z, bounds.max_z, map->rows[row].cols[col].color);
+            draw_line(coors, img_all.img_props, img_all.img);
             col++;
         }
         row++;
     }
+}
+
+void draw_put_image(t_win *window, t_image *img, t_map *map)
+{
+    t_img_props img_props;
+    t_space spaces;
+    t_bounds bounds;
+    t_img_all img_all;
+
+    spaces.w_space = (int)fmax(2, (img->width) / (largest_row(map) * 2));
+    spaces.h_space = (int)fmax(2, (img->height) / (map->nrows * 2));
+    img_props.data = mlx_get_data_addr(img->img_ptr, &(img_props.bpp), &(img_props.size_line), &(img_props.endian));
+    calculate_offset(img, map, &bounds, &spaces);
+    img_all.img_props = img_props;
+    img_all.img = img;
+    horizontal_lines(map, spaces, bounds, img_all);
+    vertical_lines(map, spaces, bounds, img_all);
     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, (window->width - img->width) / 2, (window->height - img->height) / 2);
 }
 
@@ -315,7 +247,7 @@ t_map *parse_store_map(int fd)
             if (parts[1])
                 map->rows[row].cols[col].color = ft_atoi_base(parts[1], 16);
             else
-                map->rows[row].cols[col].color = 0x69F5D5;
+                map->rows[row].cols[col].color = 0x5727F5;
             free_char_arr(parts);
             col++;
         }
@@ -323,16 +255,6 @@ t_map *parse_store_map(int fd)
         map->rows[row].ncols = ncols;
         row++;
     }
-
-    // ft_printf("Map has %d rows\n", map->nrows);
-    // for (int i = 0; i < map->nrows; i++)
-    // {
-    //     t_row temp_row = map->rows[i];
-    //     for (int j = 0; j < temp_row.ncols; j++)
-    //         ft_printf("Z: %d, C: %d\n", temp_row.cols[j].z, temp_row.cols[j].color);
-    //     ft_printf("This row has %d columns\n", temp_row.ncols);
-    // }
-
     return map;
 }
 
