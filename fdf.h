@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:38 by nismayil          #+#    #+#             */
-/*   Updated: 2025/10/31 00:55:15 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/01 23:54:47 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,17 +101,33 @@ typedef struct s_bounds
     int z_scale;
 } t_bounds;
 
+typedef struct s_breh
+{
+    int e;
+    int sx;
+    int dx;
+    int sy;
+    int dy;
+} t_breh;
+
+typedef void (*t_free_func)(void *);
+
 // utils
 void free_char_arr(char **arr);
 void free_t_point_arr(t_point **arr);
 void free_map(t_map *map);
 size_t ft_str_strlen(char **str);
+void *safe_malloc(size_t size, int n_free, ...);
+int safe_open(char *path, int flag);
 int largest_row(t_map *map);
 char *read_file(int fd);
 int height_color(int z, double min_z, double max_z, int color_high);
 void apply_isometric(int *x, int *y, int z, int z_scale);
 void calculate_offset(t_image *img, t_map *map, t_bounds *bounds, t_space *spaces);
 int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z);
+void free_char_arr_wrapper(void *p);
+void free_t_point_arr_wrapper(void *p);
+void free_map_wrapper(void *p);
 
 // hooks
 int key_hook(int keycode, t_win *vars);

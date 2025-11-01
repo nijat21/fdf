@@ -6,54 +6,55 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:55 by nismayil          #+#    #+#             */
-/*   Updated: 2025/10/31 00:58:03 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/01 23:59:14 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "fdf.h"
 
-// Bresenham's algorithm
-void draw_line(t_coordinates coors, t_img_props img_props, t_image *img)
+void draw_pixels(t_coordinates coors, t_img_props img_props, t_image *img, t_breh *breh)
 {
-    int dx;
-    int dy;
-    int e;
-    int sx;
-    int sy;
-
-    dx = abs(coors.x2 - coors.x1);
-    if (coors.x1 < coors.x2)
-        sx = 1;
-    else
-        sx = -1;
-    dy = -abs(coors.y2 - coors.y1);
-    if (coors.y1 < coors.y2)
-        sy = 1;
-    else
-        sy = -1;
-    e = dy + dx;
-
     while (1)
     {
         if (coors.x1 >= 0 && coors.x1 < img->width && coors.y1 >= 0 && coors.y1 < img->height)
             *(int *)(img_props.data + (coors.y1 * (img_props.size_line) + coors.x1 * (img_props.bpp / 8))) = coors.color;
         if (coors.x1 == coors.x2 && coors.y1 == coors.y2)
             break;
-        if (2 * e >= dy)
+        if (2 * (*breh).e >= (*breh).dy)
         {
             if (coors.x1 == coors.x2)
                 break;
-            e += dy;
-            coors.x1 += sx;
+            (*breh).e += (*breh).dy;
+            coors.x1 += (*breh).sx;
         }
-        if (2 * e <= dx)
+        if (2 * (*breh).e <= (*breh).dx)
         {
             if (coors.y1 == coors.y2)
                 break;
-            e += dx;
-            coors.y1 += sy;
+            (*breh).e += (*breh).dx;
+            coors.y1 += (*breh).sy;
         }
     }
+}
+
+// Bresenham's algorithm
+void draw_line(t_coordinates coors, t_img_props img_props, t_image *img)
+{
+    t_breh breh;
+
+    breh.dx = abs(coors.x2 - coors.x1);
+    if (coors.x1 < coors.x2)
+        breh.sx = 1;
+    else
+        breh.sx = -1;
+    breh.dy = -abs(coors.y2 - coors.y1);
+    if (coors.y1 < coors.y2)
+        breh.sy = 1;
+    else
+        breh.sy = -1;
+    breh.e = breh.dy + breh.dx;
+
+    draw_pixels(coors, img_props, img, &breh);
 }
 
 /*
@@ -175,25 +176,12 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, (window->width - img->width) / 2, (window->height - img->height) / 2);
 }
 
-t_map *parse_store_map(int fd)
+t_map *map_init(char *temp_map)
 {
-    char *temp_map;
-    char **str_map;
-    char **map_row;
-    char **parts;
-    size_t row;
-    size_t nrows;
-    size_t col;
-    size_t ncols;
     t_map *map;
+    size_t nrows;
+    char **str_map;
 
-    temp_map = read_file(fd);
-    close(fd);
-    if (!temp_map)
-    {
-        ft_putstr_fd("Couldn't read the map\n", 2);
-        return NULL;
-    }
     str_map = ft_split(temp_map, '\n');
     free(temp_map);
     if (!str_map)
@@ -210,14 +198,25 @@ t_map *parse_store_map(int fd)
         return NULL;
     }
     map->nrows = nrows;
-    map->rows = malloc(sizeof(t_row) * nrows);
-    if (!map->rows)
-    {
-        ft_putstr_fd("Couldn't allocate memory for map->rows\n", 2);
-        free_char_arr(str_map);
-        free_map(map);
-        return NULL;
-    }
+    map->rows = safe_malloc(sizeof(t_row) * nrows, 2, str_map, free_char_arr_wrapper, map, free_map_wrapper);
+    return map;
+}
+
+t_map *parse_store_map(int fd)
+{
+    char *temp_map;
+
+    char **map_row;
+    char **parts;
+    size_t row;
+    size_t nrows;
+    size_t col;
+    size_t ncols;
+    t_map *map;
+
+    temp_map = read_file(fd);
+    close(fd);
+    map = map_init(temp_map);
     row = 0;
     while (row < nrows)
     {
@@ -258,58 +257,63 @@ t_map *parse_store_map(int fd)
     return map;
 }
 
+t_win *win_init(void)
+{
+    t_win *win;
+
+    win = safe_malloc(sizeof(t_win), 0);
+    win->mlx = mlx_init();
+    win->width = 1920;
+    win->height = 1400;
+    win->win = mlx_new_window(win->mlx, win->width, win->height, "nismayil's fdf");
+    if (!win->win)
+    {
+        ft_putstr_fd("Couldn't create window\n", 2);
+        free(win);
+        win = NULL;
+        exit(EXIT_FAILURE);
+    }
+    mlx_clear_window(win->mlx, win->win);
+    return win;
+}
+
+t_image *img_init(t_win *win)
+{
+    t_image *img;
+
+    img = safe_malloc(sizeof(t_image), 1, win, free);
+    img->width = win->width;
+    img->height = win->height;
+    img->img_ptr = mlx_new_image(win->mlx, img->width, img->height);
+    if (!img->img_ptr)
+    {
+        ft_putstr_fd("Couldn't create image\n", 2);
+        free(img);
+        img = NULL;
+        free(win);
+        win = NULL;
+        exit(EXIT_FAILURE);
+    }
+    return img;
+}
+
 int main(int ac, char *av[])
 {
-    t_win *window;
+    t_win *win;
     t_image *img;
     t_map *map;
     int fd;
 
     if (ac != 2)
         return 0;
-    fd = open(av[1], O_RDONLY);
-    if (fd == -1)
-    {
-        perror("Error opening file");
-        return 0;
-    }
-
-    window = malloc(sizeof(t_win));
-    if (!window)
-        return 0;
-
-    window->mlx = mlx_init();
-    window->width = 1920;
-    window->height = 1400;
-    window->win = mlx_new_window(window->mlx, window->width, window->height, "nismayil's fdf");
-
-    // Clear the window before drawing
-    mlx_clear_window(window->mlx, window->win);
-
-    // Create an image
-    img = malloc(sizeof(t_image));
-    if (!img)
-    {
-        free(window);
-        return 0;
-    }
-    img->width = window->width;
-    img->height = window->height;
-    img->img_ptr = mlx_new_image(window->mlx, img->width, img->height);
-    if (!img->img_ptr)
-    {
-        ft_putstr_fd("Couldn't create image\n", 2);
-        free(window);
-        return 0;
-    }
-
+    fd = safe_open(av[1], O_RDONLY);
+    win = win_init();
+    img = img_init(win);
     map = parse_store_map(fd);
-    draw_put_image(window, img, map);
-
-    mlx_key_hook(window->win, key_hook, window);
-    mlx_hook(window->win, 17, 1L << 17, close_win, window);
-    mlx_loop(window->mlx);
-
-    free(window);
+    draw_put_image(win, img, map);
+    mlx_key_hook(win->win, key_hook, win);
+    mlx_hook(win->win, 17, 1L << 17, close_win, win);
+    mlx_loop(win->mlx);
+    free(win);
     return 0;
 }
