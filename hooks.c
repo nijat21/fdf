@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:30 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/01 13:51:20 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/02 01:09:54 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,21 +23,19 @@ int key_hook(int keycode, t_win *win)
     case 53:
     case 65307:
         mlx_destroy_window(win->mlx, win->win);
+        free(win);
         exit(0);
         break;
     }
     return (0);
 }
 
-int close_win(int keycode, t_win *win)
+int close_win(t_win *win)
 {
-    (void)keycode;
 #if defined(__linux__)
     mlx_destroy_window(win->mlx, win->win);
 #endif
-    (void)win;
+    free(win);
     exit(0);
     return 0;
 }
-
-// A function that should calculate x and y for which the image will be in the center of the window

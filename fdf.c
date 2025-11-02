@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:55 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/01 23:59:14 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/02 01:03:16 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -176,82 +176,68 @@ void draw_put_image(t_win *window, t_image *img, t_map *map)
     mlx_put_image_to_window(window->mlx, window->win, img->img_ptr, (window->width - img->width) / 2, (window->height - img->height) / 2);
 }
 
-t_map *map_init(char *temp_map)
+t_map *map_init(int fd, char ***str_map, size_t *nrows)
 {
     t_map *map;
-    size_t nrows;
-    char **str_map;
+    char *temp_map;
 
-    str_map = ft_split(temp_map, '\n');
+    temp_map = read_file(fd);
+    close(fd);
+    (*str_map) = ft_split(temp_map, '\n');
     free(temp_map);
-    if (!str_map)
-    {
-        ft_putstr_fd("Couldn't split the map\n", 2);
-        return NULL;
-    }
-    nrows = ft_str_strlen(str_map);
+    if (!(*str_map))
+        handle_error("Couldn't split the map\n", 0);
+    *nrows = ft_str_strlen((*str_map));
     map = malloc(sizeof(t_map));
     if (!map)
-    {
-        ft_putstr_fd("Couldn't allocate memory for map\n", 2);
-        free_char_arr(str_map);
-        return NULL;
-    }
-    map->nrows = nrows;
-    map->rows = safe_malloc(sizeof(t_row) * nrows, 2, str_map, free_char_arr_wrapper, map, free_map_wrapper);
+        handle_error("Couldn't allocate memory for map\n", 1, *str_map, free_char_arr_wrapper);
+    map->nrows = *nrows;
+    map->rows = safe_malloc(sizeof(t_row) * (*nrows), 2, (*str_map), free_char_arr_wrapper, map, free_map_wrapper);
     return map;
+}
+
+void map_cols(t_map *map, char ***map_row, int row, size_t ncols)
+{
+    size_t col;
+    char **parts;
+
+    col = 0;
+    while (col < ncols)
+    {
+        parts = ft_split((*map_row)[col], ',');
+        map->rows[row].cols[col].z = ft_atoi(parts[0]);
+        if (parts[1])
+            map->rows[row].cols[col].color = ft_atoi_base(parts[1], 16);
+        else
+            map->rows[row].cols[col].color = 0x5727F5;
+        free_char_arr(parts);
+        col++;
+    }
+    free_char_arr((*map_row));
+    map->rows[row].ncols = ncols;
 }
 
 t_map *parse_store_map(int fd)
 {
-    char *temp_map;
-
+    char **str_map;
     char **map_row;
-    char **parts;
     size_t row;
     size_t nrows;
-    size_t col;
     size_t ncols;
     t_map *map;
 
-    temp_map = read_file(fd);
-    close(fd);
-    map = map_init(temp_map);
+    map = map_init(fd, &str_map, &nrows);
     row = 0;
     while (row < nrows)
     {
-        // ft_printf("row %d\n", row);
         map_row = ft_split(str_map[row], ' ');
         if (!map_row)
-        {
-            ft_putstr_fd("Couldn't split the map row\n", 2);
-            free_char_arr(str_map);
-            free_map(map);
-            return NULL;
-        }
+            handle_error("Couldn't split the map row\n", 2, str_map, free_char_arr_wrapper, map, free_map_wrapper);
         ncols = ft_str_strlen(map_row);
         map->rows[row].cols = malloc(sizeof(t_point) * ncols);
         if (!map->rows[row].cols)
-        {
-            ft_putstr_fd("Couldn't allocate memory for the row\n", 2);
-            free_char_arr(str_map);
-            free_map(map);
-            return NULL;
-        }
-        col = 0;
-        while (col < ncols)
-        {
-            parts = ft_split(map_row[col], ',');
-            map->rows[row].cols[col].z = ft_atoi(parts[0]);
-            if (parts[1])
-                map->rows[row].cols[col].color = ft_atoi_base(parts[1], 16);
-            else
-                map->rows[row].cols[col].color = 0x5727F5;
-            free_char_arr(parts);
-            col++;
-        }
-        free_char_arr(map_row);
-        map->rows[row].ncols = ncols;
+            handle_error("Couldn't allocate memory for the row\n", 2, str_map, free_char_arr_wrapper, map, free_map_wrapper);
+        map_cols(map, &map_row, row, ncols);
         row++;
     }
     return map;

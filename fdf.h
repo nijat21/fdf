@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:38 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/01 23:54:47 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/02 01:07:58 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,10 +128,11 @@ int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z);
 void free_char_arr_wrapper(void *p);
 void free_t_point_arr_wrapper(void *p);
 void free_map_wrapper(void *p);
+void handle_error(char *err_msg, int n_free, ...);
 
 // hooks
 int key_hook(int keycode, t_win *vars);
-int close_win(int keycode, t_win *vars);
+int close_win(t_win *vars);
 
 // events
 

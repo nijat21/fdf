@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:16:55 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/01 20:14:00 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/02 00:20:34 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -153,6 +153,26 @@ void *safe_malloc(size_t size, int n_free, ...)
         exit(EXIT_FAILURE);
     }
     return ptr;
+}
+
+void handle_error(char *err_msg, int n_free, ...)
+{
+    int i;
+
+    va_list ap;
+    va_start(ap, n_free);
+    i = 0;
+    while (i < n_free)
+    {
+        void *p = va_arg(ap, void *);
+        t_free_func f = va_arg(ap, t_free_func);
+        if (p && f)
+            f(p);
+        i++;
+    }
+    va_end(ap);
+    ft_putstr_fd(err_msg, 2);
+    exit(EXIT_FAILURE);
 }
 
 int safe_open(char *path, int flag)
