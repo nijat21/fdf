@@ -12,9 +12,9 @@
 
 #include "libft.h"
 
-static size_t count_digits(long tp)
+static size_t	count_digits(long tp)
 {
-	size_t len;
+	size_t	len;
 
 	len = 0;
 	if (tp <= 0)
@@ -30,10 +30,10 @@ static size_t count_digits(long tp)
 	return (len);
 }
 
-static char *create_string(long temp, size_t len)
+static char	*create_string(long temp, size_t len)
 {
-	char *arr;
-	size_t i;
+	char	*arr;
+	size_t	i;
 
 	arr = malloc((len + 1) * sizeof(char));
 	if (!arr)
@@ -56,11 +56,11 @@ static char *create_string(long temp, size_t len)
 	return (arr);
 }
 
-char *ft_itoa(int n)
+char	*ft_itoa(int n)
 {
-	char *arr;
-	long temp;
-	size_t len;
+	char	*arr;
+	long	temp;
+	size_t	len;
 
 	temp = n;
 	len = count_digits(temp);

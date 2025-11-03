@@ -12,9 +12,9 @@
 
 #include "libft.h"
 
-int gnl_strlen(char *str)
+int	gnl_strlen(char *str)
 {
-	int count;
+	int	count;
 
 	if (!str)
 		return (0);
@@ -26,9 +26,9 @@ int gnl_strlen(char *str)
 	return (count);
 }
 
-void ft_strcpy(char *des, char *src)
+void	ft_strcpy(char *des, char *src)
 {
-	int i;
+	int	i;
 
 	i = 0;
 	while (src[i])
@@ -37,14 +37,14 @@ void ft_strcpy(char *des, char *src)
 		i++;
 	}
 	des[i] = '\0';
-	return;
+	return ;
 }
 
-char *make_line(char *str, int *index)
+char	*make_line(char *str, int *index)
 {
-	char *new_line;
-	int len;
-	int i;
+	char	*new_line;
+	int		len;
+	int		i;
 
 	if (!str)
 		return (NULL);
@@ -63,11 +63,11 @@ char *make_line(char *str, int *index)
 	return (new_line);
 }
 
-void create_merge(char **final_line, char *buf)
+void	create_merge(char **final_line, char *buf)
 {
-	char *new_line;
-	char *temp_line;
-	int index;
+	char	*new_line;
+	char	*temp_line;
+	int		index;
 
 	index = 0;
 	new_line = make_line(buf, &index);
@@ -75,7 +75,7 @@ void create_merge(char **final_line, char *buf)
 	{
 		free(*final_line);
 		*final_line = NULL;
-		return;
+		return ;
 	}
 	temp_line = ft_strjoin(*final_line, new_line);
 	free(new_line);
@@ -84,7 +84,7 @@ void create_merge(char **final_line, char *buf)
 	{
 		*final_line = NULL;
 		free(temp_line);
-		return;
+		return ;
 	}
 	*final_line = temp_line;
 	ft_strcpy(buf, &buf[index]);

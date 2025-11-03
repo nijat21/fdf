@@ -12,20 +12,21 @@
 
 #include "libft.h"
 
-int is_space(char c)
+int	is_space(char c)
 {
-	if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '\v' || c == '\f')
+	if (c == ' ' || c == '\n' || c == '\t' || c == '\r' || c == '\v'
+		|| c == '\f')
 		return (1);
 	else
 		return (0);
 }
 
 /* Also checks whether a number comes after the +/- signs */
-int ft_atoi(const char *str)
+int	ft_atoi(const char *str)
 {
-	int i;
-	int sign;
-	long result;
+	int		i;
+	int		sign;
+	long	result;
 
 	i = 0;
 	sign = 1;
@@ -45,6 +46,6 @@ int ft_atoi(const char *str)
 	}
 	result *= sign;
 	if (!(result <= 2147483647 && result >= -2147483648))
-		return 0;
-	return (int)result;
+		return (0);
+	return ((int)result);
 }

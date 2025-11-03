@@ -12,10 +12,10 @@
 
 #include "libft.h"
 
-static size_t count_words(char const *s, char c)
+static size_t	count_words(char const *s, char c)
 {
-	size_t in_word;
-	size_t count;
+	size_t	in_word;
+	size_t	count;
 
 	in_word = 0;
 	count = 0;
@@ -36,10 +36,10 @@ static size_t count_words(char const *s, char c)
 	return (count);
 }
 
-static char *allocate_assign(char ***res, char const *start, size_t len,
-							 size_t i)
+static char	*allocate_assign(char ***res, char const *start, size_t len,
+		size_t i)
 {
-	size_t j;
+	size_t	j;
 
 	j = 0;
 	(*res)[i] = (char *)malloc((len + 1) * sizeof(char));
@@ -59,10 +59,10 @@ static char *allocate_assign(char ***res, char const *start, size_t len,
 	return ((*res)[i]);
 }
 
-static void iterate_word(char ***res, char const **s, char c, size_t *i)
+static void	iterate_word(char ***res, char const **s, char c, size_t *i)
 {
-	size_t len;
-	char const *start;
+	size_t		len;
+	char const	*start;
 
 	start = *s;
 	len = 0;
@@ -75,10 +75,10 @@ static void iterate_word(char ***res, char const **s, char c, size_t *i)
 	(*i)++;
 }
 
-char **ft_split(char const *s, char c)
+char	**ft_split(char const *s, char c)
 {
-	char **res;
-	size_t i;
+	char	**res;
+	size_t	i;
 
 	if (!s)
 		return (NULL);

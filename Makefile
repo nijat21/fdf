@@ -6,7 +6,7 @@
 #    By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/10/31 00:18:46 by nismayil          #+#    #+#              #
-#    Updated: 2025/11/03 00:14:10 by nismayil         ###   ########.fr        #
+#    Updated: 2025/11/03 18:30:00 by nismayil         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,7 @@ NAME=fdf
 CC=cc
 CFLAGS= -g -Wall -Wextra -Werror
 
-SRCS:= fdf.c parser.c figures_calculator.c drawer.c projection.c utils.c hooks.c
+SRCS:= fdf.c reader.c parser.c freer.c figures_calculator.c drawer.c projection.c utils.c hooks.c
 OBJS:=$(SRCS:%.c=%.o)
 
 LIBFT_DIR=Libft
