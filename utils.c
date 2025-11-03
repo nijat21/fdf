@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:16:55 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/02 00:20:34 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/02 23:43:04 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,32 +103,6 @@ int largest_row(t_map *map)
     return largest;
 }
 
-char *read_file(int fd)
-{
-    char *line;
-    char *full_map;
-    char *temp;
-
-    full_map = NULL;
-    line = get_next_line(fd);
-    while (line != NULL)
-    {
-        temp = ft_strjoin(full_map, line);
-        free(line);
-        free(full_map);
-        full_map = temp;
-        if (full_map == NULL)
-        {
-            ft_putstr_fd("Couldn't read the map\n", 2);
-            close(fd);
-            exit(EXIT_FAILURE);
-        }
-        line = get_next_line(fd);
-    }
-    close(fd);
-    return (full_map);
-}
-
 void *safe_malloc(size_t size, int n_free, ...)
 {
     void *ptr;
@@ -146,16 +120,17 @@ void *safe_malloc(size_t size, int n_free, ...)
             t_free_func f = va_arg(ap, t_free_func);
             if (p && f)
                 f(p);
+            p = NULL;
             i++;
         }
         va_end(ap);
         perror("malloc");
-        exit(EXIT_FAILURE);
+        return NULL;
     }
     return ptr;
 }
 
-void handle_error(char *err_msg, int n_free, ...)
+void handle_error(int exit_true, char *err_msg, int n_free, ...)
 {
     int i;
 
@@ -168,11 +143,13 @@ void handle_error(char *err_msg, int n_free, ...)
         t_free_func f = va_arg(ap, t_free_func);
         if (p && f)
             f(p);
+        p = NULL;
         i++;
     }
     va_end(ap);
     ft_putstr_fd(err_msg, 2);
-    exit(EXIT_FAILURE);
+    if (exit_true)
+        exit(EXIT_FAILURE);
 }
 
 int safe_open(char *path, int flag)

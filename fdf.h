@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:38 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/02 01:07:58 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 03:00:55 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,13 @@
 
 #include "Libft/libft.h"
 #include <math.h>
+
+#ifndef LOCAL_INT_MAX
+#define LOCAL_INT_MAX 2147483647
+#endif
+#ifndef LOCAL_INT_MIN
+#define LOCAL_INT_MIN (-2147483648)
+#endif
 
 typedef struct s_win
 {
@@ -112,28 +119,44 @@ typedef struct s_breh
 
 typedef void (*t_free_func)(void *);
 
+typedef struct s_free_pair
+{
+    void *ptr;
+    t_free_func free_func;
+} t_free_pair;
+
 // utils
 void free_char_arr(char **arr);
 void free_t_point_arr(t_point **arr);
 void free_map(t_map *map);
 size_t ft_str_strlen(char **str);
-void *safe_malloc(size_t size, int n_free, ...);
 int safe_open(char *path, int flag);
 int largest_row(t_map *map);
-char *read_file(int fd);
 int height_color(int z, double min_z, double max_z, int color_high);
-void apply_isometric(int *x, int *y, int z, int z_scale);
-void calculate_offset(t_image *img, t_map *map, t_bounds *bounds, t_space *spaces);
-int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z);
 void free_char_arr_wrapper(void *p);
 void free_t_point_arr_wrapper(void *p);
 void free_map_wrapper(void *p);
-void handle_error(char *err_msg, int n_free, ...);
+void *safe_malloc(size_t size, int n_free, ...);
+void handle_error(int exit_true, char *err_msg, int n_free, ...);
+
+// Projection
+void apply_isometric(int *x, int *y, int z, int z_scale);
+void apply_offset(t_coordinates *coors, t_space *spaces);
+
+// Parser
+char *read_file(int fd);
+t_map *parse_store_map(int fd);
+
+// Calculators
+int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z);
+int height_color(int z, double min_z, double max_z, int color);
+void calculate_offset(t_image *img, t_map *map, t_bounds *bounds, t_space *spaces);
+
+// Drawer
+void draw_put_image(t_win *win, t_image *img, t_map *map);
 
 // hooks
 int key_hook(int keycode, t_win *vars);
 int close_win(t_win *vars);
-
-// events
 
 #endif
