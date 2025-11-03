@@ -6,13 +6,13 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 00:06:30 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/03 02:59:39 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 15:01:33 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "fdf.h"
 
-int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z)
+double calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z)
 {
     double max;
     double min;
@@ -38,7 +38,7 @@ int calculate_z_scale(t_map *map, t_image *img, int *min_z, int *max_z)
     *min_z = min;
     *max_z = max;
     z_scale = (img->height / 6) / ((max - min) + 1);
-    return (int)fmax(3, z_scale);
+    return fmax(3, z_scale);
 }
 
 int height_color(int z, double min_z, double max_z, int color)
@@ -114,8 +114,8 @@ void calculate_offset(t_image *img, t_map *map, t_bounds *bounds, t_space *space
     int min_z;
     int max_z;
 
-    (*spaces).w_space = (int)fmax(2, (img->width) / (largest_row(map) * 2));
-    (*spaces).h_space = (int)fmax(2, (img->height) / (map->nrows * 2));
+    (*spaces).w_space = (int)round(fmax(2, (img->width) / (largest_row(map) * 2)));
+    (*spaces).h_space = (int)round(fmax(2, (img->height) / (map->nrows * 2)));
     (*bounds).z_scale = calculate_z_scale(map, img, &min_z, &max_z);
     (*bounds).min_x = LOCAL_INT_MAX;
     (*bounds).max_x = LOCAL_INT_MIN;

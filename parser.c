@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/02 21:36:05 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/03 01:09:31 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 12:15:56 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,9 @@ t_point *map_cols(t_map *map, char ***map_row, int row, size_t ncols)
         parts = ft_split((*map_row)[col], ',');
         if (!parts)
         {
-            handle_error(0, "Couldn't split the map cols\n", 2, *map_row, free_char_arr_wrapper, map, free_map_wrapper);
+            ft_putstr_fd("Couldn't split the map cols\n", 2);
+            free_char_arr(*map_row);
+            free_map(map);
             return NULL;
         }
         map->rows[row].cols[col].z = ft_atoi(parts[0]);
@@ -77,20 +79,24 @@ t_map *map_init(int fd, char ***str_map, size_t *nrows)
     free(temp_map);
     if (!(*str_map))
     {
-        handle_error(0, "Couldn't split the map\n", 0);
+        ft_putstr_fd("Couldn't split the map\n", 2);
         return NULL;
     }
     *nrows = ft_str_strlen((*str_map));
-    map = malloc(sizeof(t_map));
+    map = safe_malloc(sizeof(t_map), "Couldn't allocate memory for map\n");
     if (!map)
     {
-        handle_error(0, "Couldn't allocate memory for map\n", 1, *str_map, free_char_arr_wrapper);
+        free_char_arr(*str_map);
         return NULL;
     }
     map->nrows = *nrows;
-    map->rows = safe_malloc(sizeof(t_row) * (*nrows), 2, (*str_map), free_char_arr_wrapper, map, free_map_wrapper);
+    map->rows = safe_malloc(sizeof(t_row) * (*nrows), "Couldn't allocate memory for map->rows\n");
     if (!map->rows)
+    {
+        free_char_arr(*str_map);
+        free_map(map);
         return NULL;
+    }
     return map;
 }
 
@@ -114,15 +120,18 @@ t_map *parse_store_map(int fd)
         map_row = ft_split(str_map[row], ' ');
         if (!map_row)
         {
-            handle_error(0, "Couldn't split the map row\n", 2, str_map, free_char_arr_wrapper, map, free_map_wrapper);
+            ft_putstr_fd("Couldn't split the map row\n", 2);
+            free_char_arr(str_map);
+            free_map(map);
             return NULL;
         }
         ncols = ft_str_strlen(map_row);
-        map->rows[row].cols = malloc(sizeof(t_point) * ncols);
+        map->rows[row].cols = safe_malloc(sizeof(t_point) * ncols, "Couldn't allocate memory for the row\n");
         if (!map->rows[row].cols)
         {
-            handle_error(0, "Couldn't allocate memory for the row\n", 3, str_map, free_char_arr_wrapper,
-                         map, free_map_wrapper, map_row, free_char_arr_wrapper);
+            free_char_arr(str_map);
+            free_char_arr(map_row);
+            free_map(map);
             return NULL;
         }
         cols = map_cols(map, &map_row, row, ncols);

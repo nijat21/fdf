@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:16:30 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/03 03:01:08 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 14:44:56 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,14 +20,14 @@ void apply_offset(t_coordinates *coors, t_space *spaces)
     (*coors).y2 += (*spaces).offset_y;
 }
 
-void apply_isometric(int *x, int *y, int z, int z_scale)
+void apply_isometric(int *x, int *y, int z, double z_scale)
 {
-    int prev_x;
-    int prev_y;
+    double prev_x;
+    double prev_y;
 
     prev_x = *x;
     prev_y = *y;
 
-    *x = (prev_x - prev_y) * 173 / 200;
-    *y = (prev_x + prev_y) * 100 / 200 - z * z_scale;
+    *x = (int)round((prev_x - prev_y) * 0.8660254037844386);
+    *y = (int)round((prev_x + prev_y) * 0.5 - z * z_scale);
 }

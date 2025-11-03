@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:16:55 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/02 23:43:04 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 12:13:26 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,21 +62,6 @@ void free_map(t_map *map)
     map = NULL;
 }
 
-void free_char_arr_wrapper(void *p)
-{
-    free_char_arr((char **)p);
-}
-
-void free_t_point_arr_wrapper(void *p)
-{
-    free_t_point_arr((t_point **)p);
-}
-
-void free_map_wrapper(void *p)
-{
-    free_map((t_map *)p);
-}
-
 size_t ft_str_strlen(char **str)
 {
     size_t count;
@@ -103,53 +88,11 @@ int largest_row(t_map *map)
     return largest;
 }
 
-void *safe_malloc(size_t size, int n_free, ...)
+void exit_msg(char *msg)
 {
-    void *ptr;
-    int i;
-
-    ptr = malloc(size);
-    if (!ptr)
-    {
-        va_list ap;
-        va_start(ap, n_free);
-        i = 0;
-        while (i < n_free)
-        {
-            void *p = va_arg(ap, void *);
-            t_free_func f = va_arg(ap, t_free_func);
-            if (p && f)
-                f(p);
-            p = NULL;
-            i++;
-        }
-        va_end(ap);
-        perror("malloc");
-        return NULL;
-    }
-    return ptr;
-}
-
-void handle_error(int exit_true, char *err_msg, int n_free, ...)
-{
-    int i;
-
-    va_list ap;
-    va_start(ap, n_free);
-    i = 0;
-    while (i < n_free)
-    {
-        void *p = va_arg(ap, void *);
-        t_free_func f = va_arg(ap, t_free_func);
-        if (p && f)
-            f(p);
-        p = NULL;
-        i++;
-    }
-    va_end(ap);
-    ft_putstr_fd(err_msg, 2);
-    if (exit_true)
-        exit(EXIT_FAILURE);
+    if (msg)
+        ft_putstr_fd(msg, 2);
+    exit(EXIT_FAILURE);
 }
 
 int safe_open(char *path, int flag)
@@ -163,4 +106,17 @@ int safe_open(char *path, int flag)
         exit(EXIT_FAILURE);
     }
     return fd;
+}
+
+void *safe_malloc(size_t size, char *err_msg)
+{
+    void *ptr;
+
+    ptr = malloc(size);
+    if (!ptr)
+    {
+        perror(err_msg);
+        return NULL;
+    }
+    return ptr;
 }

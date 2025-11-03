@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 00:04:12 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/03 03:00:22 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 14:57:53 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -122,8 +122,6 @@ void draw_put_image(t_win *win, t_image *img, t_map *map)
     t_bounds bounds;
     t_img_all img_all;
 
-    spaces.w_space = (int)fmax(2, (img->width) / (largest_row(map) * 2));
-    spaces.h_space = (int)fmax(2, (img->height) / (map->nrows * 2));
     img_props.data = mlx_get_data_addr(img->img_ptr, &(img_props.bpp), &(img_props.size_line), &(img_props.endian));
     calculate_offset(img, map, &bounds, &spaces);
     img_all.img_props = img_props;
@@ -132,3 +130,18 @@ void draw_put_image(t_win *win, t_image *img, t_map *map)
     vertical_lines(map, spaces, bounds, img_all);
     mlx_put_image_to_window(win->mlx, win->win, img->img_ptr, (win->width - img->width) / 2, (win->height - img->height) / 2);
 }
+// void draw_put_image(t_win *win, t_image *img, t_map *map)
+// {
+//     t_img_props img_props;
+//     t_space spaces;
+//     t_bounds bounds;
+//     t_img_all img_all;
+
+//     img_props.data = mlx_get_data_addr(img->img_ptr, &(img_props.bpp), &(img_props.size_line), &(img_props.endian));
+//     calculate_offset(img, map, &bounds, &spaces);
+//     img_all.img_props = img_props;
+//     img_all.img = img;
+//     horizontal_lines(map, spaces, bounds, img_all);
+//     vertical_lines(map, spaces, bounds, img_all);
+//     mlx_put_image_to_window(win->mlx, win->win, img->img_ptr, (win->width - img->width) / 2, (win->height - img->height) / 2);
+// }

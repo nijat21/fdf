@@ -6,7 +6,7 @@
 /*   By: nismayil <nismayil@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 00:18:55 by nismayil          #+#    #+#             */
-/*   Updated: 2025/11/03 00:08:49 by nismayil         ###   ########.fr       */
+/*   Updated: 2025/11/03 13:00:09 by nismayil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,12 @@ t_image *img_init(t_win *win, int fd)
 {
     t_image *img;
 
-    img = safe_malloc(sizeof(t_image), 1, win, free);
+    img = malloc(sizeof(t_image));
     if (!img)
     {
         close(fd);
-        exit(EXIT_FAILURE);
+        free(win);
+        exit_msg("Image couldn't be allocated\n");
     }
     img->width = win->width;
     img->height = win->height;
@@ -34,7 +35,9 @@ t_image *img_init(t_win *win, int fd)
     if (!img->img_ptr)
     {
         close(fd);
-        handle_error(1, "Couldn't create image\n", 2, img, free, win, free);
+        free(win);
+        free(img);
+        exit_msg("Couldn't create image\n");
     }
     return img;
 }
@@ -43,17 +46,17 @@ t_win *win_init(int fd)
 {
     t_win *win;
 
-    win = safe_malloc(sizeof(t_win), 0);
+    win = malloc(sizeof(t_win));
     if (!win)
     {
         close(fd);
-        exit(EXIT_FAILURE);
+        exit_msg("Window couldn't be allocated\n");
     }
     win->mlx = mlx_init();
     if (!win->mlx)
     {
         close(fd);
-        handle_error(1, "Issue with initiating Mlx\n", 1, win, free);
+        exit_msg("Issue with initiating Mlx\n");
     }
     win->width = 1920;
     win->height = 1400;
@@ -61,7 +64,7 @@ t_win *win_init(int fd)
     if (!win->win)
     {
         close(fd);
-        handle_error(1, "Couldn't create window\n", 1, win, free);
+        exit_msg("Couldn't create window\n");
     }
     mlx_clear_window(win->mlx, win->win);
     return win;
