@@ -1,5 +1,9 @@
 # Fil de fer
 
+
+https://github.com/user-attachments/assets/52f3eac1-96c0-46ed-9d51-2faa10d0913f
+
+
 Compact 3D wireframe map renderer in C. Reads a map (`.fdf`) and draws a 3D wireframe using an isometric projection.
 
 Main features
